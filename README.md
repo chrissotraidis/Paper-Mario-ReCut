@@ -108,7 +108,7 @@ Short version:
 
 ```powershell
 git submodule update --init --recursive
-powershell -ExecutionPolicy Bypass -File scripts/generate_recomp_output.ps1 -RomPath "D:\path\to\Paper Mario (U).z64"
+# Generate generated/paper_mario_recomp_out/ locally from your own legal ROM first.
 cmake -S . -B build-recut -G "Visual Studio 17 2022" -A x64 -DPAPER_MARIO_ROM_PATH="D:\path\to\Paper Mario (U).z64"
 cmake --build build-recut --config Release --target PaperMarioReCut
 ```
@@ -118,21 +118,18 @@ Required build tools:
 - Visual Studio 2022 with C++ desktop tools.
 - CMake.
 - Git.
-- WSL2/Ubuntu for the local Paper Mario decompilation build.
 - .NET 8 SDK for Paper Atlas Tool.
+- A local workflow for creating `generated/paper_mario_recomp_out/` from your legally dumped Paper Mario (U) ROM.
 
 The generated folder `generated/paper_mario_recomp_out/` is local-only and intentionally ignored by Git. Do not commit generated recomp output, ROMs, saves, or `user/`.
 
-The old setup-only bootstrap shell can still be built for local experiments, but it is not the release/player path:
-
-```powershell
-cmake -S . -B build-bootstrap -G "Visual Studio 17 2022" -A x64 -DPAPER_RECUT_BUILD_BOOTSTRAP=ON
-cmake --build build-bootstrap --config Release --target PaperMarioReCut
-```
+The release/player path is a prepared Windows folder. Players do not build generated output and do not need the source build tools.
 
 ## License And Credits
 
 Paper Mario ReCut's original project code is released under the MIT License. See `LICENSE`.
+
+Release `v0.1.2` is a license-compliance corrective release. See `COMPLIANCE.md` for the release packaging checklist, source availability notes, and files that must not be included in public builds.
 
 This project also uses and credits third-party open-source work, especially:
 
