@@ -11,6 +11,10 @@
 #include <algorithm>
 #include <xxHash/xxh3.h>
 #include <mutex>
+#if TARGET_OS_IPHONE
+#include <dispatch/dispatch.h>
+#include <pthread.h>
+#endif
 
 #include "rt64_metal.h"
 
@@ -29,6 +33,23 @@ namespace RT64 {
     // MARK: - Prototypes
 
     MTL::PixelFormat mapPixelFormat(RT64::RenderFormat format);
+
+#if TARGET_OS_IPHONE
+    struct MetalLayerDisplaySyncState {
+        CA::MetalLayer *layer;
+        bool enabled;
+    };
+
+    static void setMetalLayerDisplaySync(void *opaqueState) {
+        auto *state = static_cast<MetalLayerDisplaySyncState *>(opaqueState);
+        state->layer->setDisplaySyncEnabled(state->enabled);
+    }
+
+    static void readMetalLayerDisplaySync(void *opaqueState) {
+        auto *state = static_cast<MetalLayerDisplaySyncState *>(opaqueState);
+        state->enabled = state->layer->displaySyncEnabled();
+    }
+#endif
 
     // MARK: - Helpers
 
@@ -1700,11 +1721,32 @@ namespace RT64 {
     }
 
     void MetalSwapChain::setVsyncEnabled(const bool vsyncEnabled) {
+#if TARGET_OS_IPHONE
+        MetalLayerDisplaySyncState state{ layer, vsyncEnabled };
+        if (pthread_main_np() != 0) {
+            setMetalLayerDisplaySync(&state);
+        }
+        else {
+            dispatch_sync_f(dispatch_get_main_queue(), &state, setMetalLayerDisplaySync);
+        }
+#else
         layer->setDisplaySyncEnabled(vsyncEnabled);
+#endif
     }
 
     bool MetalSwapChain::isVsyncEnabled() const {
+#if TARGET_OS_IPHONE
+        MetalLayerDisplaySyncState state{ layer, true };
+        if (pthread_main_np() != 0) {
+            readMetalLayerDisplaySync(&state);
+        }
+        else {
+            dispatch_sync_f(dispatch_get_main_queue(), &state, readMetalLayerDisplaySync);
+        }
+        return state.enabled;
+#else
         return layer->displaySyncEnabled();
+#endif
     }
 
     uint32_t MetalSwapChain::getWidth() const {
