@@ -6,6 +6,7 @@
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 #include <CoreFoundation/CoreFoundation.h>
+#include <TargetConditionals.h>
 
 #include <algorithm>
 #include <xxHash/xxh3.h>
@@ -3131,7 +3132,17 @@ namespace RT64 {
 
     bool MetalInterface::isValid() const {
         // check if Metal is available and we support bindless textures: GPUFamilyMac2 or GPUFamilyApple6
+#if TARGET_OS_IPHONE
+        // CopyAllDevices is a macOS enumeration API and reports an empty list
+        // in iOS Simulator even when CreateSystemDefaultDevice succeeded.
+#if TARGET_OS_SIMULATOR
+        return device != nullptr;
+#else
+        return device != nullptr && device->supportsFamily(MTL::GPUFamilyApple6);
+#endif
+#else
         return MTL::CopyAllDevices()->count() > 0 && (device->supportsFamily(MTL::GPUFamilyMac2) || device->supportsFamily(MTL::GPUFamilyApple6));
+#endif
     }
 
     void MetalInterface::createResolvePipelineState() {
