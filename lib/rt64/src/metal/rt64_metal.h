@@ -166,7 +166,10 @@ namespace RT64 {
     struct MetalDescriptorSet : RenderDescriptorSet {
         struct ResourceEntry {
             MTL::Resource* resource = nullptr;
+            MTL::SamplerState* sampler = nullptr;
+            uint32_t offset = 0;
             RenderDescriptorRangeType type = RenderDescriptorRangeType::UNKNOWN;
+            bool dirty = false;
         };
 
         MetalDevice *device = nullptr;
@@ -176,6 +179,7 @@ namespace RT64 {
         MetalArgumentBuffer argumentBuffer;
 
         std::vector<ResourceEntry> resourceEntries;
+        bool hasPendingDescriptors = false;
 
         MetalDescriptorSet(MetalDevice *device, const RenderDescriptorSetDesc &desc);
         MetalDescriptorSet(MetalDevice *device, uint32_t entryCount);
@@ -186,6 +190,7 @@ namespace RT64 {
         void setAccelerationStructure(uint32_t descriptorIndex, const RenderAccelerationStructure *accelerationStructure) override;
 
         void setDescriptor(uint32_t descriptorIndex, const Descriptor *descriptor);
+        void flushPendingDescriptors();
         void bindImmutableSamplers() const;
         RenderDescriptorRangeType getDescriptorType(uint32_t binding) const;
     };
@@ -328,8 +333,8 @@ namespace RT64 {
         const MetalRenderState *activeRenderState = nullptr;
         const MetalComputeState *activeComputeState = nullptr;
 
-        const MetalDescriptorSet* renderDescriptorSets[DESCRIPTOR_SET_MAX_INDEX + 1] = {};
-        const MetalDescriptorSet* computeDescriptorSets[DESCRIPTOR_SET_MAX_INDEX + 1] = {};
+        MetalDescriptorSet* renderDescriptorSets[DESCRIPTOR_SET_MAX_INDEX + 1] = {};
+        MetalDescriptorSet* computeDescriptorSets[DESCRIPTOR_SET_MAX_INDEX + 1] = {};
         
         std::unordered_set<MetalDescriptorSet*> currentEncoderDescriptorSets;
         void bindEncoderResources(MTL::CommandEncoder* encoder, bool isCompute);
@@ -548,7 +553,7 @@ namespace RT64 {
         MetalPipelineLayout(MetalDevice *device, const RenderPipelineLayoutDesc &desc);
         ~MetalPipelineLayout() override;
 
-        void bindDescriptorSets(MTL::CommandEncoder* encoder, const MetalDescriptorSet* const* descriptorSets, uint32_t descriptorSetCount, bool isCompute, uint32_t startIndex, std::unordered_set<MetalDescriptorSet*>& encoderDescriptorSets) const;
+        void bindDescriptorSets(MTL::CommandEncoder* encoder, MetalDescriptorSet* const* descriptorSets, uint32_t descriptorSetCount, bool isCompute, uint32_t startIndex, std::unordered_set<MetalDescriptorSet*>& encoderDescriptorSets) const;
     };
 
     struct MetalDevice : RenderDevice {
