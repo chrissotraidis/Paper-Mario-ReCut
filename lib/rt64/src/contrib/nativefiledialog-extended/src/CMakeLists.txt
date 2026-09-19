@@ -56,6 +56,10 @@ if(nfd_PLATFORM STREQUAL PLATFORM_MACOS)
   list(APPEND SOURCE_FILES nfd_cocoa.m)
 endif()
 
+if(nfd_PLATFORM STREQUAL PLATFORM_NULL)
+  list(APPEND SOURCE_FILES nfd_null.cpp)
+endif()
+
 # Define the library
 add_library(${TARGET_NAME} ${SOURCE_FILES})
 
