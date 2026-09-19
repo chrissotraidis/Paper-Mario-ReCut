@@ -1650,7 +1650,9 @@ namespace RT64 {
     }
 
     MetalSwapChain::~MetalSwapChain() {
+#if !TARGET_OS_IPHONE
         layer->release();
+#endif
     }
 
     bool MetalSwapChain::present(const uint32_t textureIndex, RenderCommandSemaphore **waitSemaphores, const uint32_t waitSemaphoreCount) {
