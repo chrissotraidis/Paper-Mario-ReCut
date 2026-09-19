@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 option(N64MODERN_NO_DYNAMIC_CODE "Compile out runtime code generation and dynamic-library loading" OFF)
-set(MUPEN_RSP_HLE_DIR "${PROJECT_SOURCE_DIR}/../../../../mupen64plus-rsp-hle")
+set(MUPEN_RSP_HLE_DIR "${PROJECT_SOURCE_DIR}/../../../../mupen64plus-rsp-hle" CACHE PATH "Pinned Mupen RSP HLE source directory")
 set(PARALLEL_RSP_DIR "${PROJECT_SOURCE_DIR}/../../../../parallel-n64/mupen64plus-rsp-paraLLEl")
 set(PARALLEL_RSP_BUILD_DIR "${PROJECT_SOURCE_DIR}/../../../../parallel-n64/build-rsp-clang")
 
