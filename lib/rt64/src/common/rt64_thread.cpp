@@ -14,6 +14,11 @@
 #   include <pthread.h>
 #endif
 
+#if defined(__APPLE__)
+extern "C" void *objc_autoreleasePoolPush(void);
+extern "C" void objc_autoreleasePoolPop(void *ctxt);
+#endif
+
 namespace RT64 {
 #   if defined(_WIN32)
     static int toWindowsPriority(Thread::Priority priority) {
@@ -75,4 +80,14 @@ namespace RT64 {
         std::this_thread::sleep_for(std::chrono::milliseconds(millis));
 #   endif
     }
+
+#if defined(__APPLE__)
+    AppleAutoreleasePoolMarker::AppleAutoreleasePoolMarker() {
+        poolToken = objc_autoreleasePoolPush();
+    }
+
+    AppleAutoreleasePoolMarker::~AppleAutoreleasePoolMarker() {
+        objc_autoreleasePoolPop(poolToken);
+    }
+#endif
 };

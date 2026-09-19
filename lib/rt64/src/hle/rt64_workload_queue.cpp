@@ -21,6 +21,10 @@ namespace RT64 {
     }
 
     WorkloadQueue::~WorkloadQueue() {
+        stop();
+    }
+
+    void WorkloadQueue::stop() {
         threadsRunning = false;
         cursorCondition.notify_all();
         idleCondition.notify_all();
@@ -28,11 +32,13 @@ namespace RT64 {
         if (renderThread != nullptr) {
             renderThread->join();
             delete renderThread;
+            renderThread = nullptr;
         }
 
         if (idleThread != nullptr) {
             idleThread->join();
             delete idleThread;
+            idleThread = nullptr;
         }
 
         workloadIdCondition.notify_all();
@@ -291,6 +297,9 @@ namespace RT64 {
         float deltaTimeMs, RenderTargetKey overrideTargetKey, int32_t overrideTargetFbPairIndex, RenderTarget *overrideTarget,
         uint32_t overrideTargetModifier, bool uploadVelocity, bool uploadExtras, bool interpolateTiles)
     {
+#if defined(__APPLE__)
+        AppleAutoreleasePoolMarker framePool;
+#endif
 #   if ENABLE_HIGH_RESOLUTION_RENDERER
         std::scoped_lock<std::mutex> managerLock(ext.sharedResources->workloadMutex);
         FramebufferManager &fbManager = ext.sharedResources->framebufferManager;
@@ -853,6 +862,10 @@ namespace RT64 {
     void WorkloadQueue::renderThreadLoop() {
         Thread::setCurrentThreadName("RT64 Workload");
 
+#if defined(__APPLE__)
+        AppleAutoreleasePoolMarker threadPool;
+#endif
+
         WorkloadConfiguration workloadConfig;
         int64_t logicalTicks = 0;
         int64_t displayTicks = 0;
@@ -1173,6 +1186,9 @@ namespace RT64 {
     }
     
     void WorkloadQueue::idleThreadLoop() {
+#if defined(__APPLE__)
+        AppleAutoreleasePoolMarker threadPool;
+#endif
         // Beware traveler as you enter the zone of dirty driver hacks. Given N64 games are not exactly a demanding thing to render
         // nowadays for modern GPUs and due to how the plugin's cooperative multiqueue system works, it's sometimes just not possible
         // to keep the GPU busy at all times. It is often the case that the GPU might've already rendered all the frames it needed to
@@ -1202,6 +1218,11 @@ namespace RT64 {
             }
 
             if (threadsRunning) {
+#if defined(__APPLE__)
+                // This loop can submit a fenced Metal command buffer every millisecond.
+                // Do not retain its autoreleased wrappers until thread shutdown.
+                AppleAutoreleasePoolMarker idleWorkPool;
+#endif
                 if (workerMutex.try_lock()) {
                     commandList->begin();
                     commandList->setPipeline(idle.pipeline.get());

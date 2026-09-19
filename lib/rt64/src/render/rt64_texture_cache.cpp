@@ -406,6 +406,9 @@ namespace RT64 {
 
     void TextureCache::StreamThread::loop() {
         Thread::setCurrentThreadName("RT64 Stream");
+#if defined(__APPLE__)
+        AppleAutoreleasePoolMarker threadPool;
+#endif
 
         // Texture streaming threads should have a priority somewhere inbetween the main threads and the shader compilation threads.
         Thread::setCurrentThreadPriority(Thread::Priority::Low);
@@ -965,6 +968,9 @@ namespace RT64 {
 
     void TextureCache::uploadThreadLoop() {
         Thread::setCurrentThreadName("RT64 Texture");
+#if defined(__APPLE__)
+        AppleAutoreleasePoolMarker threadPool;
+#endif
 
         uploadThreadRunning = true;
 
@@ -1038,6 +1044,12 @@ namespace RT64 {
             }
 
             if (!queueCopy.empty() || !resolvedPathQueueCopy.empty() || !afterDecodeBarriers.empty()) {
+#if defined(__APPLE__)
+                // The upload path chains its copy queue into the direct queue and waits
+                // for the direct fence before this iteration ends. Drain temporary
+                // Metal-cpp wrappers only after that fully synchronized batch.
+                AppleAutoreleasePoolMarker uploadBatchPool;
+#endif
                 // Create new upload buffers and descriptor heaps to fill out the required size.
                 const size_t queueSize = queueCopy.size();
                 const uint64_t TMEMSize = 0x1000;

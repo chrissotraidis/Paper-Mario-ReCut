@@ -41,6 +41,9 @@ namespace RT64 {
 
     void BufferUploader::threadLoop() {
         Thread::setCurrentThreadName("RT64 Buffer");
+#if defined(__APPLE__)
+        AppleAutoreleasePoolMarker threadPool;
+#endif
 
         running = true;
 

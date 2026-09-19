@@ -22,4 +22,14 @@ namespace RT64 {
         static void setCurrentThreadPriority(Priority priority);
         static void sleepMilliseconds(uint32_t millis);
     };
+
+#if defined(__APPLE__)
+    class AppleAutoreleasePoolMarker {
+        void *poolToken;
+
+    public:
+        AppleAutoreleasePoolMarker();
+        ~AppleAutoreleasePoolMarker();
+    };
+#endif
 };

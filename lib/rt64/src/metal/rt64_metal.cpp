@@ -1080,8 +1080,6 @@ namespace RT64 {
         // Create texture with configured descriptor and alignment
         MTL::TextureDescriptor *descriptor = MTL::TextureDescriptor::textureBufferDescriptor(pixelFormat, width, options, usage);
         this->texture = buffer->mtl->newTexture(descriptor, 0, bytesPerRow);
-
-        descriptor->release();
     }
 
     MetalBufferFormattedView::~MetalBufferFormattedView() {
@@ -1208,7 +1206,6 @@ namespace RT64 {
     }
 
     MetalShader::~MetalShader() {
-        functionName->release();
         library->release();
     }
 
@@ -1986,9 +1983,7 @@ namespace RT64 {
         this->queue = queue;
     }
 
-    MetalCommandList::~MetalCommandList() {
-        mtl->release();
-    }
+    MetalCommandList::~MetalCommandList() {}
 
     void MetalCommandList::begin() {
         assert(mtl == nullptr);
@@ -2007,7 +2002,6 @@ namespace RT64 {
 
     void MetalCommandList::commit() {
         mtl->commit();
-        mtl->release();
         mtl = nullptr;
     }
 
@@ -2911,6 +2905,7 @@ namespace RT64 {
 
         if (activeBlitEncoder == nullptr) {
             activeBlitEncoder = mtl->blitCommandEncoder(device->renderInterface->reusableBlitDescriptor);
+            activeBlitEncoder->retain();
             activeBlitEncoder->setLabel(MTLSTR("Copy Blit Encoder"));
         }
     }
@@ -2931,6 +2926,7 @@ namespace RT64 {
 
         if (activeResolveComputeEncoder == nullptr) {
             activeResolveComputeEncoder = mtl->computeCommandEncoder();
+            activeResolveComputeEncoder->retain();
             activeResolveComputeEncoder->setLabel(MTLSTR("Resolve Texture Encoder"));
             activeResolveComputeEncoder->setComputePipelineState(device->renderInterface->resolveTexturePipelineState);
         }

@@ -394,7 +394,17 @@ namespace RT64 {
         return SetupResult::Success;
     }
 
-    Application::~Application() {}
+    Application::~Application() {
+        // Stop encoder threads before the Metal device and render resources
+        // begin member teardown. This also lets their autorelease pools drain
+        // while every referenced Metal object is still alive.
+        if (presentQueue != nullptr) {
+            presentQueue->stop();
+        }
+        if (workloadQueue != nullptr) {
+            workloadQueue->stop();
+        }
+    }
 
     void Application::processDisplayLists(uint8_t *memory, uint32_t dlStartAddress, uint32_t dlEndAddress, bool isHLE) {
         if (state->debuggerInspector.paused) {

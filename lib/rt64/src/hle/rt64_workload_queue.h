@@ -107,6 +107,7 @@ namespace RT64 {
         void waitForIdle();
         void waitForWorkloadId(uint64_t waitId);
         void setup(const External &ext);
+        void stop();
         void updateMultisampling();
         void threadConfigurationUpdate(WorkloadConfiguration &workloadConfig);
         void threadConfigurationValidate();

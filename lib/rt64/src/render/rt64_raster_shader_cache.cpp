@@ -29,6 +29,9 @@ namespace RT64 {
 
     void RasterShaderCache::CompilationThread::loop() {
         Thread::setCurrentThreadName("RT64 Shader");
+#if defined(__APPLE__)
+        AppleAutoreleasePoolMarker threadPool;
+#endif
 
         // The shader compilation thread should have idle priority by default as the application can use the ubershader in the meantime.
         Thread::setCurrentThreadPriority(Thread::Priority::Idle);
