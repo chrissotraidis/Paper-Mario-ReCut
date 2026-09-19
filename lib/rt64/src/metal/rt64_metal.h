@@ -595,6 +595,7 @@ namespace RT64 {
         MTL::Function* clearVertexFunction;
         MTL::Function* clearColorFunction;
         MTL::Function* clearDepthFunction;
+        MTL::DepthStencilState *clearColorDepthStencilState;
         MTL::DepthStencilState *clearDepthStencilState;
 
         std::mutex clearPipelineStateMutex;

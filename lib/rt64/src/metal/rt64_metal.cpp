@@ -2244,12 +2244,7 @@ namespace RT64 {
         // Set pixel format for depth attachment if we have one, with write disabled
         if (targetFramebuffer->depthAttachment != nullptr) {
             pipelineDesc->setDepthAttachmentPixelFormat(targetFramebuffer->depthAttachment->mtl->pixelFormat());
-            MTL::DepthStencilDescriptor *depthStencilDescriptor = MTL::DepthStencilDescriptor::alloc()->init();
-            depthStencilDescriptor->setDepthWriteEnabled(false);
-            const MTL::DepthStencilState *depthStencilState = device->mtl->newDepthStencilState(depthStencilDescriptor);
-            activeRenderEncoder->setDepthStencilState(depthStencilState);
-
-            depthStencilDescriptor->release();
+            activeRenderEncoder->setDepthStencilState(device->renderInterface->clearColorDepthStencilState);
         }
 
         const MTL::RenderPipelineState *pipelineState = device->renderInterface->getOrCreateClearRenderPipelineState(pipelineDesc);
@@ -3161,6 +3156,8 @@ namespace RT64 {
         clearVertexFunction->release();
         clearColorFunction->release();
         clearDepthFunction->release();
+        clearColorDepthStencilState->release();
+        clearDepthStencilState->release();
         device->release();
         reusableBlitDescriptor->release();
     }
@@ -3289,6 +3286,10 @@ namespace RT64 {
 
         // Create depth stencil state
         MTL::DepthStencilDescriptor *depthDescriptor = MTL::DepthStencilDescriptor::alloc()->init();
+        depthDescriptor->setDepthWriteEnabled(false);
+        depthDescriptor->setDepthCompareFunction(MTL::CompareFunctionAlways);
+        clearColorDepthStencilState = device->newDepthStencilState(depthDescriptor);
+
         depthDescriptor->setDepthWriteEnabled(true);
         depthDescriptor->setDepthCompareFunction(MTL::CompareFunctionAlways);
         clearDepthStencilState = device->newDepthStencilState(depthDescriptor);
