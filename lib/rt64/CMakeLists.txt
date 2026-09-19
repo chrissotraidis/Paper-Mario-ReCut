@@ -82,7 +82,11 @@ else()
 endif()
 add_subdirectory(src/contrib/re-spirv)
 add_subdirectory(src/contrib/nativefiledialog-extended)
-add_subdirectory(src/contrib/zstd/build/cmake)
+if (PAPERPAD_ZSTD_SOURCE_DIR)
+    add_subdirectory("${PAPERPAD_ZSTD_SOURCE_DIR}/build/cmake" "${CMAKE_CURRENT_BINARY_DIR}/zstd")
+else()
+    add_subdirectory(src/contrib/zstd/build/cmake)
+endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # Use /W4 for clang-cl, as -Wall maps to MSVC's /Wall which in turn maps to clang's -Weverything
