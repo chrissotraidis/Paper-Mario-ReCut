@@ -1699,7 +1699,9 @@ namespace RT64 {
     }
 
     MetalDrawable::~MetalDrawable() {
-        mtl->release();
+        if (mtl != nullptr) {
+            mtl->release();
+        }
     }
 
     std::unique_ptr<RenderTextureView> MetalDrawable::createTextureView(const RenderTextureViewDesc& desc) {
@@ -1878,9 +1880,15 @@ namespace RT64 {
         drawable.desc.height = height;
         drawable.desc.flags = RenderTextureFlag::RENDER_TARGET;
         drawable.desc.format = mapRenderFormat(nextDrawable->texture()->pixelFormat());
-        drawable.mtl = nextDrawable;
 
-        drawable.mtl->retain();
+        // The swap-chain slot owns one retain across frames. Presentation
+        // takes its own temporary retain, so replacing the slot must release
+        // the previous drawable or every frame remains live in FramePacing.
+        nextDrawable->retain();
+        if (drawable.mtl != nullptr) {
+            drawable.mtl->release();
+        }
+        drawable.mtl = nextDrawable;
         releasePool->release();
 
         return true;
