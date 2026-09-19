@@ -6,6 +6,10 @@
 
 #include <algorithm>
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+
 #include "gbi/rt64_f3d.h"
 #include "shared/rt64_fb_common.h"
 #include "shared/rt64_render_target_copy.h"
@@ -17,8 +21,15 @@
 
 namespace RT64 {
     // RenderTarget
-    
+
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+    // iOS Metal (including Simulator) can reject 2D textures wider than 8192.
+    // Keep RT64's shared sizing clamp aligned with that backend limit so a
+    // transient oversized framebuffer cannot abort inside Metal validation.
+    const long RenderTarget::MaxDimension = 0x2000L;
+#else
     const long RenderTarget::MaxDimension = 0x4000L;
+#endif
 
     RenderTarget::RenderTarget(uint32_t addressForName, Framebuffer::Type type, const RenderMultisampling &multisampling, bool usesHDR) {
         this->addressForName = addressForName;
