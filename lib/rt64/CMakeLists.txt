@@ -111,6 +111,12 @@ set(ANDROID_ABI arm64-v8a)
 
 # For DXC
 set (DXC_COMMON_OPTS "-I${PROJECT_SOURCE_DIR}/src")
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    # Apple mobile GPUs and Simulator expose at most 16 samplers per shader.
+    # RT64's optional native-sampler fast path declares 18 combinations; use
+    # the renderer's accurate software addressing/filtering path on iOS.
+    list(APPEND DXC_COMMON_OPTS "-D" "RT64_DISABLE_NATIVE_SAMPLERS=1")
+endif()
 set (DXC_DXIL_OPTS "-Wno-ignored-attributes")
 set (DXC_SPV_OPTS "-spirv" "-fspv-target-env=vulkan1.0" "-fvk-use-dx-layout")
 set (DXC_LB_OPTS "${DXC_COMMON_OPTS}" "-D" "LIBRARY" "-T" "lib_6_3")
