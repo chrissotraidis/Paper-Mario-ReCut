@@ -21,6 +21,7 @@ namespace RT64 {
         j["aspectTarget"] = cfg.aspectTarget;
         j["extAspectRatio"] = cfg.extAspectRatio;
         j["extAspectTarget"] = cfg.extAspectTarget;
+        j["fillActiveArea"] = cfg.fillActiveArea;
         j["upscale2D"] = cfg.upscale2D;
         j["threePointFiltering"] = cfg.threePointFiltering;
         j["refreshRate"] = cfg.refreshRate;
@@ -44,6 +45,7 @@ namespace RT64 {
         cfg.aspectTarget = j.value("aspectTarget", defaultCfg.aspectTarget);
         cfg.extAspectRatio = j.value("extAspectRatio", defaultCfg.extAspectRatio);
         cfg.extAspectTarget = j.value("extAspectTarget", defaultCfg.extAspectTarget);
+        cfg.fillActiveArea = j.value("fillActiveArea", defaultCfg.fillActiveArea);
         cfg.upscale2D = j.value("upscale2D", defaultCfg.upscale2D);
         cfg.threePointFiltering = j.value("threePointFiltering", defaultCfg.threePointFiltering);
         cfg.refreshRate = j.value("refreshRate", defaultCfg.refreshRate);
@@ -75,6 +77,7 @@ namespace RT64 {
         aspectTarget = 16.0f / 9.0f;
         extAspectRatio = AspectRatio::Original;
         extAspectTarget = 16.0f / 9.0f;
+        fillActiveArea = false;
         upscale2D = Upscale2D::ScaledOnly;
         threePointFiltering = true;
         refreshRate = RefreshRate::Original;

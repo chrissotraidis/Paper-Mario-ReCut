@@ -94,6 +94,7 @@ namespace RT64 {
         double aspectTarget;
         AspectRatio extAspectRatio;
         double extAspectTarget;
+        bool fillActiveArea;
         Upscale2D upscale2D;
         bool threePointFiltering;
         RefreshRate refreshRate;

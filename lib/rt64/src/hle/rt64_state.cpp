@@ -2009,11 +2009,12 @@ namespace RT64 {
             ext.sharedQueueResources->configurationMutex.lock();
             const hlslpp::float2 resolutionScale = ext.sharedQueueResources->resolutionScale;
             const uint32_t downsampleMultiplier = ext.userConfig->downsampleMultiplier;
+            const bool fillActiveArea = ext.userConfig->fillActiveArea;
             ext.sharedQueueResources->configurationMutex.unlock();
             RenderViewport viewport;
             RenderRect scissor;
             hlslpp::float2 fbHdRegion;
-            VIRenderer::getViewportAndScissor(ext.swapChain, lastScreenVI, resolutionScale, downsampleMultiplier, viewport, scissor, fbHdRegion);
+            VIRenderer::getViewportAndScissor(ext.swapChain, lastScreenVI, resolutionScale, downsampleMultiplier, fillActiveArea, viewport, scissor, fbHdRegion);
 
             // Convert the mouse coordinates to native coordinates.
             // FIXME: This needs a lot more work to be compatible with games with less standard VI modes.

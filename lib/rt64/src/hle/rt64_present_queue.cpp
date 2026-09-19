@@ -17,12 +17,17 @@ namespace RT64 {
     }
 
     PresentQueue::~PresentQueue() {
+        stop();
+    }
+
+    void PresentQueue::stop() {
         presentThreadRunning = false;
         cursorCondition.notify_all();
 
         if (presentThread != nullptr) {
             presentThread->join();
             delete presentThread;
+            presentThread = nullptr;
         }
 
         presentIdCondition.notify_all();
@@ -100,6 +105,7 @@ namespace RT64 {
         EnhancementConfiguration::Presentation::Mode presentationMode;
         UserConfiguration::RefreshRate refreshRate;
         UserConfiguration::Filtering filtering;
+        bool fillActiveArea;
         uint32_t viOriginalRate;
         uint32_t targetRate;
         {
@@ -108,6 +114,7 @@ namespace RT64 {
             presentationMode = ext.sharedResources->enhancementConfig.presentation.mode;
             refreshRate = ext.sharedResources->userConfig.refreshRate;
             filtering = ext.sharedResources->userConfig.filtering;
+            fillActiveArea = ext.sharedResources->userConfig.fillActiveArea;
             viOriginalRate = ext.sharedResources->viOriginalRate;
             targetRate = ext.sharedResources->targetRate;
         }
@@ -325,6 +332,7 @@ namespace RT64 {
                     renderParams.resolutionScale = colorTarget->resolutionScale;
                     renderParams.downsamplingScale = 1;
                     renderParams.filtering = filtering;
+                    renderParams.fillActiveArea = fillActiveArea;
                     renderParams.vi = &present.screenVI;
 
                     const bool useDownsampling = (colorTarget->downsampleMultiplier > 1);
@@ -455,6 +463,10 @@ namespace RT64 {
     void PresentQueue::threadLoop() {
         Thread::setCurrentThreadName("RT64 Present");
 
+#if defined(__APPLE__)
+        AppleAutoreleasePoolMarker threadPool;
+#endif
+
         // Create the semaphores used by the swap chains.
         acquiredSemaphore = ext.device->createCommandSemaphore();
         drawSemaphore = ext.device->createCommandSemaphore();
@@ -475,6 +487,12 @@ namespace RT64 {
 #endif
         bool swapChainValid = !ext.swapChain->needsResize();
         while (presentThreadRunning) {
+#if defined(__APPLE__)
+            // Metal-cpp command buffers returned by non-owning factory methods
+            // are autoreleased. Drain them every present instead of retaining
+            // the full session's serializer resources until thread shutdown.
+            AppleAutoreleasePoolMarker presentPool;
+#endif
             {
                 std::unique_lock<std::mutex> cursorLock(cursorMutex);
                 cursorCondition.wait(cursorLock, [&]() {

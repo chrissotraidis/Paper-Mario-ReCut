@@ -27,12 +27,13 @@ namespace RT64 {
             uint32_t textureWidth = 0;
             uint32_t textureHeight = 0;
             UserConfiguration::Filtering filtering = UserConfiguration::Filtering::Linear;
+            bool fillActiveArea = false;
             const VI *vi = nullptr;
         };
 
         VIRenderer();
         ~VIRenderer();
         void render(const RenderParams &p);
-        static void getViewportAndScissor(const RenderSwapChain *swapChain, const VI &vi, hlslpp::float2 resolutionScale, uint32_t downsamplingScale, RenderViewport &viewport, RenderRect &scissor, hlslpp::float2 &fbHdRegion);
+        static void getViewportAndScissor(const RenderSwapChain *swapChain, const VI &vi, hlslpp::float2 resolutionScale, uint32_t downsamplingScale, bool fillActiveArea, RenderViewport &viewport, RenderRect &scissor, hlslpp::float2 &fbHdRegion);
     };
 };

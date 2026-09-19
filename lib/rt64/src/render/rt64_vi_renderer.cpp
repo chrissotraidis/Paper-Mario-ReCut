@@ -7,6 +7,8 @@
 #include "shared/rt64_hlsl.h"
 #include "shared/rt64_video_interface.h"
 
+#include <algorithm>
+
 namespace RT64 {
     // VIRenderer
 
@@ -41,6 +43,14 @@ namespace RT64 {
         return windowCenter + relativeCoordinate * relativeScale;
     }
 
+    inline hlslpp::float2 fromActiveHDtoWindow(hlslpp::float2 coordinate, hlslpp::float2 activeTopLeft, hlslpp::float2 activeBottomRight, hlslpp::float2 windowSize) {
+        const hlslpp::float2 activeSize = activeBottomRight - activeTopLeft;
+        const hlslpp::float2 activeCenter = (activeTopLeft + activeBottomRight) / 2;
+        const hlslpp::float2 windowCenter = windowSize / 2;
+        const float relativeScale = std::max(windowSize.x / activeSize.x, windowSize.y / activeSize.y);
+        return windowCenter + (coordinate - activeCenter) * relativeScale;
+    }
+
     void VIRenderer::render(const RenderParams &p) {
         const ShaderRecord *shader = nullptr;
         const RenderSampler *sampler = nullptr;
@@ -70,7 +80,7 @@ namespace RT64 {
         RenderViewport viewport;
         RenderRect scissor;
         hlslpp::float2 fbHdRegion;
-        getViewportAndScissor(p.swapChain, *p.vi, p.resolutionScale, p.downsamplingScale, viewport, scissor, fbHdRegion);
+        getViewportAndScissor(p.swapChain, *p.vi, p.resolutionScale, p.downsamplingScale, p.fillActiveArea, viewport, scissor, fbHdRegion);
         p.commandList->setViewports(viewport);
         p.commandList->setScissors(scissor);
 
@@ -87,7 +97,7 @@ namespace RT64 {
         p.commandList->drawInstanced(3, 1, 0, 0);
     }
 
-    void VIRenderer::getViewportAndScissor(const RenderSwapChain *swapChain, const VI &vi, hlslpp::float2 resolutionScale, uint32_t downsamplingScale, RenderViewport &viewport, RenderRect &scissor, hlslpp::float2 &fbHdRegion) {
+    void VIRenderer::getViewportAndScissor(const RenderSwapChain *swapChain, const VI &vi, hlslpp::float2 resolutionScale, uint32_t downsamplingScale, bool fillActiveArea, RenderViewport &viewport, RenderRect &scissor, hlslpp::float2 &fbHdRegion) {
         // We define three different coordinate spaces to work with to translate the VI parameters into the Window.
         //
         // VideoSD: This corresponds to the SD TV Scanline space, which is what the VI natively works on.
@@ -114,15 +124,31 @@ namespace RT64 {
         RectI viCropRect = vi.cropRectangle();
         hlslpp::float2 topLeftViewport = fromSDtoHD({ float(viViewRect.x), float(viViewRect.y) }, sdSize, hdSize);
         hlslpp::float2 bottomRightViewport = fromSDtoHD({ float(viViewRect.x + viViewRect.w), float(viViewRect.y + viViewRect.h) }, sdSize, hdSize);
-        topLeftViewport = fromHDtoWindow(topLeftViewport, hdSize, windowSize);
-        bottomRightViewport = fromHDtoWindow(bottomRightViewport, hdSize, windowSize);
 
         hlslpp::float2 topLeftScissor = fromSDtoHD({ float(viCropRect.x), float(viCropRect.y) }, sdSize, hdSize);
         hlslpp::float2 bottomRightScissor = fromSDtoHD({ float(viCropRect.x + viCropRect.w), float(viCropRect.y + viCropRect.h) }, sdSize, hdSize);
-        topLeftScissor = fromHDtoWindow(topLeftScissor, hdSize, windowSize);
-        bottomRightScissor = fromHDtoWindow(bottomRightScissor, hdSize, windowSize);
+        if (fillActiveArea && (viViewRect.w > 0) && (viViewRect.h > 0)) {
+            const hlslpp::float2 activeTopLeft = topLeftViewport;
+            const hlslpp::float2 activeBottomRight = bottomRightViewport;
+            topLeftViewport = fromActiveHDtoWindow(topLeftViewport, activeTopLeft, activeBottomRight, windowSize);
+            bottomRightViewport = fromActiveHDtoWindow(bottomRightViewport, activeTopLeft, activeBottomRight, windowSize);
+            topLeftScissor = fromActiveHDtoWindow(topLeftScissor, activeTopLeft, activeBottomRight, windowSize);
+            bottomRightScissor = fromActiveHDtoWindow(bottomRightScissor, activeTopLeft, activeBottomRight, windowSize);
+        }
+        else {
+            topLeftViewport = fromHDtoWindow(topLeftViewport, hdSize, windowSize);
+            bottomRightViewport = fromHDtoWindow(bottomRightViewport, hdSize, windowSize);
+            topLeftScissor = fromHDtoWindow(topLeftScissor, hdSize, windowSize);
+            bottomRightScissor = fromHDtoWindow(bottomRightScissor, hdSize, windowSize);
+        }
 
         viewport = RenderViewport(topLeftViewport.x, topLeftViewport.y, bottomRightViewport.x - topLeftViewport.x, bottomRightViewport.y - topLeftViewport.y);
-        scissor = RenderRect(lround(topLeftScissor.x), lround(topLeftScissor.y), lround(bottomRightScissor.x), lround(bottomRightScissor.y));
+        const int32_t windowWidth = static_cast<int32_t>(swapChain->getWidth());
+        const int32_t windowHeight = static_cast<int32_t>(swapChain->getHeight());
+        scissor = RenderRect(
+            std::clamp<int32_t>(lround(topLeftScissor.x), 0, windowWidth),
+            std::clamp<int32_t>(lround(topLeftScissor.y), 0, windowHeight),
+            std::clamp<int32_t>(lround(bottomRightScissor.x), 0, windowWidth),
+            std::clamp<int32_t>(lround(bottomRightScissor.y), 0, windowHeight));
     }
 };
